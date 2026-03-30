@@ -4,8 +4,8 @@
   "description": "A family recipe vault — generate, save, and organize recipes",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1a1410",
-  "theme_color": "#1a1410",
+  "background_color": "#0d0f1a",
+  "theme_color": "#0d0f1a",
   "orientation": "portrait-primary",
   "icons": [
     {

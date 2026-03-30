@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Rhodes Recipes">
-<meta name="theme-color" content="#1a1410">
+<meta name="theme-color" content="#0d0f1a">
 <meta name="description" content="Rhodes Recipes — a family recipe vault">
 <title>Rhodes Recipes</title>
 <link rel="manifest" href="manifest.json">
@@ -14,20 +14,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg-primary: #1a1410;
-  --bg-secondary: #231e18;
-  --bg-card: #2a2420;
-  --bg-elevated: #332c25;
-  --text-primary: #f5e6d3;
-  --text-secondary: #c4a882;
-  --text-muted: #8a7560;
-  --border: #3d352c;
-  --accent: #d4915e;
-  --accent-glow: rgba(212, 145, 94, 0.15);
+  --bg-primary: #0d0f1a;
+  --bg-secondary: #141726;
+  --bg-card: #1a1e33;
+  --bg-elevated: #222842;
+  --text-primary: #e8e6f0;
+  --text-secondary: #a8a3c0;
+  --text-muted: #6b6590;
+  --border: #2d2f50;
+  --accent: #a78bfa;
+  --accent-glow: rgba(167, 139, 250, 0.15);
   --radius: 16px;
   --radius-sm: 10px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.3);
-  --shadow-lg: 0 12px 48px rgba(0,0,0,0.5);
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.6);
   --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -42,30 +42,26 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ─── Scrollbar ─── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-/* ─── Typography ─── */
 .brand { font-family: 'Playfair Display', serif; font-weight: 700; }
 .brand-accent { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; }
 
-/* ─── Profile Picker Overlay ─── */
+/* ─── Profile Picker ─── */
 #profilePicker {
   position: fixed; inset: 0; z-index: 1000;
   background: var(--bg-primary);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 24px;
-  animation: fadeIn 0.4s ease;
+  padding: 24px; animation: fadeIn 0.4s ease;
 }
 #profilePicker.hidden { display: none; }
-
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .picker-brand {
   font-size: 2.4rem; margin-bottom: 8px;
-  background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+  background: linear-gradient(135deg, #e8e6f0, #a78bfa);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
 .picker-subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 48px; letter-spacing: 0.5px; }
@@ -74,9 +70,8 @@ body {
   display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;
   max-width: 500px; margin-bottom: 32px;
 }
-
 .profile-card {
-  width: 130px; padding: 28px 16px 20px;
+  width: 150px; padding: 32px 20px 24px;
   background: var(--bg-card); border: 1.5px solid var(--border);
   border-radius: var(--radius); cursor: pointer;
   text-align: center; transition: var(--transition);
@@ -94,15 +89,11 @@ body {
 .profile-card:hover .profile-avatar { border-color: var(--accent); }
 .profile-name { font-weight: 600; font-size: 0.95rem; }
 
-.add-profile-card {
-  border-style: dashed; border-color: var(--border);
-}
-.add-profile-card .profile-avatar {
-  font-size: 1.8rem; border-style: dashed; color: var(--text-muted);
-}
+.add-profile-card { border-style: dashed; border-color: var(--border); }
+.add-profile-card .profile-avatar { font-size: 1.8rem; border-style: dashed; color: var(--text-muted); }
 .add-profile-card .profile-name { color: var(--text-muted); }
 
-/* ─── Add Profile Modal ─── */
+/* ─── Modal ─── */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 2000;
   background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
@@ -110,7 +101,6 @@ body {
   padding: 24px; animation: fadeIn 0.2s ease;
 }
 .modal-overlay.hidden { display: none; }
-
 .modal {
   background: var(--bg-elevated); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 32px;
@@ -119,42 +109,39 @@ body {
 .modal h2 { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: 24px; }
 .modal label { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; }
 .modal input[type="text"] {
-  width: 100%; padding: 12px 16px; background: var(--bg-secondary);
+  width: 100%; padding: 14px 16px; background: var(--bg-secondary);
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   color: var(--text-primary); font-size: 1rem; outline: none;
   transition: var(--transition); margin-bottom: 20px;
 }
 .modal input[type="text"]:focus { border-color: var(--accent); }
-
 .color-options { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
 .color-dot {
-  width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
   border: 3px solid transparent; transition: var(--transition);
 }
 .color-dot.selected, .color-dot:hover { border-color: var(--text-primary); transform: scale(1.15); }
-
 .modal-actions { display: flex; gap: 12px; }
 .modal-actions button { flex: 1; }
 
 /* ─── Buttons ─── */
 .btn {
-  padding: 12px 20px; border: none; border-radius: var(--radius-sm);
+  padding: 14px 24px; border: none; border-radius: var(--radius-sm);
   font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
-  cursor: pointer; transition: var(--transition);
+  cursor: pointer; transition: var(--transition); min-height: 48px;
 }
-.btn-primary { background: var(--accent); color: #1a1410; }
+.btn-primary { background: var(--accent); color: #0d0f1a; }
 .btn-primary:hover { filter: brightness(1.1); }
 .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); }
 .btn-secondary:hover { background: var(--bg-elevated); }
 
-/* ─── Main App Shell ─── */
-#app { display: none; min-height: 100dvh; padding-bottom: 80px; }
+/* ─── App Shell ─── */
+#app { display: none; min-height: 100dvh; padding-bottom: 100px; }
 #app.active { display: block; }
 
-/* ─── Header ─── */
 .app-header {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(26, 20, 16, 0.85); backdrop-filter: blur(20px);
+  background: rgba(13, 15, 26, 0.85); backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
   padding: 16px 20px 12px;
 }
@@ -162,9 +149,9 @@ body {
 .header-brand { font-size: 1.35rem; }
 .header-profile {
   display: flex; align-items: center; gap: 10px; cursor: pointer;
-  padding: 6px 12px 6px 6px; border-radius: 20px;
+  padding: 8px 14px 8px 8px; border-radius: 20px;
   background: var(--bg-card); border: 1px solid var(--border);
-  transition: var(--transition);
+  transition: var(--transition); min-height: 44px;
 }
 .header-profile:hover { border-color: var(--accent); }
 .header-profile-avatar {
@@ -174,38 +161,36 @@ body {
 }
 .header-profile-name { font-size: 0.8rem; font-weight: 500; }
 
-/* ─── Search Bar ─── */
 .search-bar {
   display: flex; align-items: center; gap: 10px;
   background: var(--bg-card); border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm); padding: 10px 16px;
+  border-radius: var(--radius-sm); padding: 14px 16px;
   transition: var(--transition);
 }
 .search-bar:focus-within { border-color: var(--accent); }
 .search-bar svg { flex-shrink: 0; color: var(--text-muted); }
 .search-bar input {
   flex: 1; border: none; background: none; color: var(--text-primary);
-  font-size: 0.95rem; outline: none;
+  font-size: 1rem; outline: none;
 }
 .search-bar input::placeholder { color: var(--text-muted); }
 
 /* ─── Tab Bar ─── */
 .tab-bar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(26, 20, 16, 0.92); backdrop-filter: blur(20px);
+  background: rgba(13, 15, 26, 0.92); backdrop-filter: blur(20px);
   border-top: 1px solid var(--border);
-  display: flex; padding: 8px 0; padding-bottom: max(8px, env(safe-area-inset-bottom));
+  display: flex; padding: 8px 0; padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
 .tab-item {
   flex: 1; display: flex; flex-direction: column; align-items: center;
-  gap: 4px; padding: 8px; cursor: pointer; background: none; border: none;
+  gap: 4px; padding: 12px 8px; cursor: pointer; background: none; border: none;
   color: var(--text-muted); transition: var(--transition);
 }
 .tab-item.active { color: var(--accent); }
-.tab-item svg { width: 22px; height: 22px; }
-.tab-label { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; }
+.tab-item svg { width: 26px; height: 26px; }
+.tab-label { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; }
 
-/* ─── Content Sections ─── */
 .tab-content { display: none; padding: 20px; }
 .tab-content.active { display: block; }
 
@@ -214,11 +199,11 @@ body {
   font-family: 'Playfair Display', serif; font-size: 1.3rem;
   margin-bottom: 16px; color: var(--text-primary);
 }
-.recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+.recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
 
 .recipe-card {
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 20px 16px;
+  border-radius: var(--radius); padding: 24px 20px; min-height: 120px;
   cursor: pointer; transition: var(--transition);
   position: relative; overflow: hidden;
 }
@@ -232,7 +217,6 @@ body {
   box-shadow: var(--shadow);
 }
 .recipe-card:hover::before { opacity: 1; }
-
 .recipe-emoji { font-size: 2.2rem; margin-bottom: 12px; }
 .recipe-title {
   font-family: 'Playfair Display', serif; font-size: 1rem;
@@ -251,9 +235,7 @@ body {
   border-radius: 20px; font-weight: 500;
 }
 
-.empty-state {
-  text-align: center; padding: 60px 20px; color: var(--text-muted);
-}
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
 .empty-state .empty-icon { font-size: 3rem; margin-bottom: 16px; }
 .empty-state h3 { font-family: 'Playfair Display', serif; color: var(--text-secondary); margin-bottom: 8px; }
 .empty-state p { font-size: 0.85rem; margin-bottom: 24px; line-height: 1.6; }
@@ -266,9 +248,9 @@ body {
   letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px;
 }
 .form-input, .form-textarea {
-  width: 100%; padding: 14px 16px; background: var(--bg-card);
+  width: 100%; padding: 16px 18px; background: var(--bg-card);
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-  color: var(--text-primary); font-size: 0.95rem; font-family: 'Inter', sans-serif;
+  color: var(--text-primary); font-size: 1rem; font-family: 'Inter', sans-serif;
   outline: none; transition: var(--transition);
 }
 .form-input:focus, .form-textarea:focus { border-color: var(--accent); }
@@ -277,16 +259,15 @@ body {
 .generate-btn {
   width: 100%; padding: 16px; font-size: 1rem; font-weight: 600;
   border-radius: var(--radius-sm); border: none; cursor: pointer;
-  background: linear-gradient(135deg, var(--accent), #c47a45);
-  color: #1a1410; transition: var(--transition);
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  color: #0d0f1a; transition: var(--transition);
   display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 52px;
 }
 .generate-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; filter: none; }
 
-.generating-indicator {
-  display: none; text-align: center; padding: 40px 20px; color: var(--text-secondary);
-}
+.generating-indicator { display: none; text-align: center; padding: 40px 20px; color: var(--text-secondary); }
 .generating-indicator.active { display: block; }
 .generating-spinner {
   width: 40px; height: 40px; border: 3px solid var(--border);
@@ -302,34 +283,50 @@ body {
   transform: translateY(100%);
   transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
   overflow-y: auto; -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column;
 }
 .recipe-sheet.open { transform: translateY(0); }
 
 .sheet-header {
   position: sticky; top: 0; z-index: 10;
-  background: rgba(26, 20, 16, 0.9); backdrop-filter: blur(20px);
-  padding: 16px 20px; display: flex; align-items: center;
+  background: rgba(13, 15, 26, 0.9); backdrop-filter: blur(20px);
+  padding: 12px 16px; display: flex; align-items: center;
   justify-content: space-between; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 .sheet-close {
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 50%; width: 36px; height: 36px;
+  border-radius: 50%; width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; color: var(--text-primary); transition: var(--transition);
+  flex-shrink: 0;
 }
 .sheet-close:hover { background: var(--bg-elevated); }
-.sheet-actions { display: flex; gap: 8px; }
+.sheet-actions { display: flex; gap: 8px; align-items: center; }
 .sheet-action-btn {
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 50%; width: 36px; height: 36px;
+  border-radius: 50%; width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; color: var(--text-primary); font-size: 1.1rem;
   transition: var(--transition);
 }
 .sheet-action-btn:hover { background: var(--bg-elevated); border-color: var(--accent); }
 .sheet-action-btn.danger:hover { border-color: #e05555; color: #e05555; }
+.sheet-action-btn.save-btn {
+  background: var(--accent); border-color: var(--accent); color: #0d0f1a;
+}
+.sheet-action-btn.save-btn:hover { filter: brightness(1.15); }
+.sheet-action-btn.save-btn.saved {
+  background: var(--bg-card); border-color: var(--border); color: #34d399;
+}
+.unsaved-badge {
+  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;
+  color: #fb923c; font-weight: 600; padding: 4px 10px;
+  background: rgba(251, 146, 40, 0.12); border-radius: 12px;
+}
 
-.sheet-body { padding: 28px 20px 100px; max-width: 600px; margin: 0 auto; }
+.sheet-scroll { flex: 1; overflow-y: auto; }
+.sheet-body { padding: 28px 20px 32px; max-width: 600px; margin: 0 auto; }
 .sheet-emoji { font-size: 3.5rem; margin-bottom: 16px; }
 .sheet-title {
   font-family: 'Playfair Display', serif; font-size: 1.8rem;
@@ -351,14 +348,14 @@ body {
 .sheet-section ul { list-style: none; }
 .sheet-section ul li {
   padding: 8px 0; font-size: 0.9rem; line-height: 1.5;
-  color: var(--text-secondary); border-bottom: 1px solid rgba(61,53,44,0.4);
+  color: var(--text-secondary); border-bottom: 1px solid rgba(45,47,80,0.4);
   display: flex; align-items: baseline; gap: 10px;
 }
-.sheet-section ul li::before { content: '•'; color: var(--accent); font-weight: bold; flex-shrink: 0; }
+.sheet-section ul li::before { content: '\2022'; color: var(--accent); font-weight: bold; flex-shrink: 0; }
 .sheet-section ol { list-style: none; counter-reset: steps; }
 .sheet-section ol li {
   padding: 12px 0; font-size: 0.9rem; line-height: 1.6;
-  color: var(--text-secondary); border-bottom: 1px solid rgba(61,53,44,0.4);
+  color: var(--text-secondary); border-bottom: 1px solid rgba(45,47,80,0.4);
   display: flex; gap: 14px; counter-increment: steps;
 }
 .sheet-section ol li::before {
@@ -372,36 +369,108 @@ body {
   line-height: 1.7; border-left: 3px solid var(--accent);
 }
 
-/* ─── Settings Tab ─── */
+/* ─── Chat Interface ─── */
+.chat-section {
+  border-top: 1px solid var(--border); margin-top: 12px;
+  padding: 20px 20px 0; max-width: 600px; margin-left: auto; margin-right: auto;
+}
+.chat-section-title {
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text-muted); margin-bottom: 16px; font-weight: 500;
+}
+.chat-messages { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.chat-bubble {
+  max-width: 85%; padding: 12px 16px;
+  border-radius: 16px; font-size: 0.88rem; line-height: 1.5;
+  word-wrap: break-word;
+}
+.chat-bubble.user {
+  align-self: flex-end;
+  background: var(--accent); color: #0d0f1a;
+  border-bottom-right-radius: 4px;
+}
+.chat-bubble.assistant {
+  align-self: flex-start;
+  background: var(--bg-elevated); color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+.chat-bubble.error {
+  align-self: flex-start;
+  background: rgba(224, 85, 85, 0.1); color: #f0a0a0;
+  border: 1px solid rgba(224, 85, 85, 0.3);
+  border-bottom-left-radius: 4px;
+}
+.typing-indicator {
+  align-self: flex-start; padding: 12px 20px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 16px; border-bottom-left-radius: 4px;
+  display: flex; gap: 5px;
+}
+.typing-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-muted); animation: typingBounce 1.4s infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+.chat-input-bar {
+  position: sticky; bottom: 0;
+  display: flex; gap: 10px; padding: 12px 20px;
+  background: var(--bg-secondary); border-top: 1px solid var(--border);
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+.chat-input-bar input {
+  flex: 1; padding: 14px 16px; background: var(--bg-card);
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text-primary); font-size: 1rem; outline: none;
+  transition: var(--transition);
+}
+.chat-input-bar input:focus { border-color: var(--accent); }
+.chat-input-bar input::placeholder { color: var(--text-muted); }
+.chat-send-btn {
+  width: 48px; height: 48px; padding: 0; border: none;
+  background: var(--accent); color: #0d0f1a; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; transition: var(--transition);
+}
+.chat-send-btn:hover { filter: brightness(1.15); }
+.chat-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── Settings ─── */
 .settings-section {
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
 }
-.settings-title {
-  font-family: 'Playfair Display', serif; font-size: 1rem;
-  margin-bottom: 14px;
-}
+.settings-title { font-family: 'Playfair Display', serif; font-size: 1rem; margin-bottom: 14px; }
 .settings-input-group { display: flex; gap: 10px; }
 .settings-input-group input { flex: 1; }
 .settings-note { font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
 .profile-manage-list { display: flex; flex-direction: column; gap: 10px; }
 .profile-manage-item {
   display: flex; align-items: center; gap: 12px;
-  padding: 10px 12px; background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
+  padding: 10px 12px; background: var(--bg-secondary); border-radius: var(--radius-sm);
 }
-.profile-manage-item .profile-avatar { margin: 0; width: 36px; height: 36px; font-size: 1rem; }
+.profile-manage-item .pm-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; border: 2px solid var(--border);
+}
 .profile-manage-item span { flex: 1; font-weight: 500; }
 .delete-profile-btn {
   background: none; border: 1px solid var(--border); color: var(--text-muted);
-  border-radius: 8px; padding: 4px 10px; font-size: 0.75rem; cursor: pointer;
-  transition: var(--transition);
+  border-radius: 8px; padding: 8px 14px; font-size: 0.8rem; cursor: pointer;
+  transition: var(--transition); min-height: 40px;
 }
 .delete-profile-btn:hover { border-color: #e05555; color: #e05555; }
 
 /* ─── Toast ─── */
 .toast {
-  position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+  position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%) translateY(20px);
   background: var(--bg-elevated); border: 1px solid var(--border);
   padding: 12px 24px; border-radius: var(--radius-sm);
   font-size: 0.85rem; color: var(--text-primary);
@@ -410,7 +479,6 @@ body {
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ─── Error Message ─── */
 .error-msg {
   background: rgba(224, 85, 85, 0.1); border: 1px solid rgba(224, 85, 85, 0.3);
   border-radius: var(--radius-sm); padding: 12px 16px; margin-top: 16px;
@@ -420,7 +488,8 @@ body {
 
 @media (min-width: 600px) {
   .recipe-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
-  .sheet-body { padding: 40px 32px 100px; }
+  .sheet-body { padding: 40px 32px 40px; }
+  .chat-section { padding: 20px 32px 0; }
 }
 </style>
 </head>
@@ -467,12 +536,10 @@ body {
     </div>
   </header>
 
-  <!-- Recipes Tab -->
   <div class="tab-content active" id="tabRecipes">
     <div id="recipesContent"></div>
   </div>
 
-  <!-- Generate Tab -->
   <div class="tab-content" id="tabGenerate">
     <h2 class="section-title">Generate a Recipe</h2>
     <div class="generate-form">
@@ -485,7 +552,7 @@ body {
         <textarea class="form-textarea" id="genPrefs" placeholder="e.g. gluten-free, serves 4, under 30 minutes..."></textarea>
       </div>
       <button class="generate-btn" id="generateBtn" onclick="generateRecipe()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
         Generate Recipe
       </button>
       <div class="generating-indicator" id="genIndicator">
@@ -496,7 +563,6 @@ body {
     </div>
   </div>
 
-  <!-- Settings Tab -->
   <div class="tab-content" id="tabSettings">
     <h2 class="section-title">Settings</h2>
     <div class="settings-section">
@@ -515,19 +581,18 @@ body {
       <div class="settings-title">About</div>
       <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
         <span class="brand">Rhodes </span><span class="brand-accent">Recipes</span> is a family recipe vault.
-        Generate recipes with AI, organize your favorites, and keep each family member's collection separate.
+        Generate recipes with AI, tweak them with conversation, and keep each family member's collection separate.
       </p>
     </div>
   </div>
 
-  <!-- Tab Bar -->
   <nav class="tab-bar">
     <button class="tab-item active" data-tab="tabRecipes" onclick="switchTab('tabRecipes')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
       <span class="tab-label">Recipes</span>
     </button>
     <button class="tab-item" data-tab="tabGenerate" onclick="switchTab('tabGenerate')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
       <span class="tab-label">Generate</span>
     </button>
     <button class="tab-item" data-tab="tabSettings" onclick="switchTab('tabSettings')">
@@ -543,12 +608,21 @@ body {
     <button class="sheet-close" onclick="closeSheet()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
     </button>
-    <div class="sheet-actions">
-      <button class="sheet-action-btn" onclick="shareRecipe()" title="Share">📤</button>
-      <button class="sheet-action-btn danger" onclick="deleteRecipe()" title="Delete">🗑️</button>
+    <div class="sheet-actions" id="sheetActions"></div>
+  </div>
+  <div class="sheet-scroll">
+    <div class="sheet-body" id="sheetBody"></div>
+    <div class="chat-section" id="chatSection" style="display:none">
+      <div class="chat-section-title">Conversation</div>
+      <div class="chat-messages" id="chatMessages"></div>
     </div>
   </div>
-  <div class="sheet-body" id="sheetBody"></div>
+  <div class="chat-input-bar" id="chatInputBar" style="display:none">
+    <input type="text" id="chatInput" placeholder="Ask to modify this recipe...">
+    <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+    </button>
+  </div>
 </div>
 
 <!-- Toast -->
@@ -557,14 +631,29 @@ body {
 <script>
 // ─── State ───
 let currentProfile = null;
-let currentRecipeId = null;
-const PROFILE_COLORS = ['#d4915e','#7eb89a','#8b9fd4','#d48b8b','#c4a0d4','#d4c77e','#7ec4c4','#d47eb8'];
+let activeSheetRecipe = null;
+let chatInFlight = false;
+
+const PROFILE_COLORS = ['#a78bfa','#22d3ee','#f472b6','#818cf8','#34d399','#fb923c','#e879f9','#38bdf8'];
 const DEFAULT_PROFILES = [
-  { id: 'aaron', name: 'Aaron', emoji: '👨‍🍳', color: '#d4915e' },
-  { id: 'hannah', name: 'Hannah', emoji: '👩‍🍳', color: '#7eb89a' }
+  { id: 'aaron', name: 'Aaron', emoji: '👨‍🍳', color: '#a78bfa' },
+  { id: 'hannah', name: 'Hannah', emoji: '👩‍🍳', color: '#22d3ee' }
 ];
 
-// ─── Storage Helpers ───
+const RECIPE_SYSTEM_PROMPT = `You are a professional chef and recipe creator. When creating or modifying a recipe, respond ONLY with a valid JSON object (no markdown, no code fences) in this exact format:
+{
+  "emoji": "single relevant food emoji",
+  "title": "Recipe Title",
+  "description": "One or two sentence description",
+  "tags": ["tag1", "tag2", "tag3"],
+  "ingredients": ["ingredient 1 with amount", "ingredient 2 with amount"],
+  "steps": ["Step 1 instruction", "Step 2 instruction"],
+  "notes": "Optional tips or variations",
+  "chatMessage": "Brief friendly message about what you created or changed"
+}
+The chatMessage field should be a short conversational response (1-2 sentences) explaining what you did. When the user asks for modifications, update the full recipe JSON accordingly and explain the change in chatMessage.`;
+
+// ─── Storage ───
 function getProfiles() {
   let p = JSON.parse(localStorage.getItem('rr_profiles') || 'null');
   if (!p) { p = DEFAULT_PROFILES; localStorage.setItem('rr_profiles', JSON.stringify(p)); }
@@ -587,7 +676,7 @@ function renderProfilePicker() {
   const grid = document.getElementById('profilesGrid');
   const profiles = getProfiles();
   grid.innerHTML = profiles.map(p => `
-    <div class="profile-card" onclick="selectProfile('${p.id}')" style="--accent: ${p.color}">
+    <div class="profile-card" onclick="selectProfile('${p.id}')">
       <div class="profile-avatar" style="background: ${p.color}20; border-color: ${p.color}">${p.emoji}</div>
       <div class="profile-name">${p.name}</div>
     </div>
@@ -624,10 +713,9 @@ function switchProfile() {
 function applyAccent(color) {
   document.documentElement.style.setProperty('--accent', color);
   document.documentElement.style.setProperty('--accent-glow', color + '22');
-  document.querySelector('meta[name="theme-color"]').content = '#1a1410';
 }
 
-// ─── Add Profile Modal ───
+// ─── Add Profile ───
 function openAddProfile() {
   document.getElementById('addProfileModal').classList.remove('hidden');
   document.getElementById('newProfileName').value = '';
@@ -661,7 +749,7 @@ function renderProfileManageList() {
   const profiles = getProfiles();
   document.getElementById('profileManageList').innerHTML = profiles.map(p => `
     <div class="profile-manage-item">
-      <div class="profile-avatar" style="background:${p.color}20; border: 2px solid ${p.color}; border-radius: 50%; display:flex; align-items:center; justify-content:center;">${p.emoji}</div>
+      <div class="pm-avatar" style="background:${p.color}20; border-color:${p.color}">${p.emoji}</div>
       <span>${p.name}</span>
       <button class="delete-profile-btn" onclick="deleteProfile('${p.id}')">Remove</button>
     </div>
@@ -725,16 +813,10 @@ function renderRecipes(filter = '') {
   `;
 }
 
-function handleSearch() {
-  renderRecipes(document.getElementById('searchInput').value);
-}
+function handleSearch() { renderRecipes(document.getElementById('searchInput').value); }
 
-// ─── Recipe Detail ───
-function openRecipe(id) {
-  const recipes = getRecipes();
-  const r = recipes.find(x => x.id === id);
-  if (!r) return;
-  currentRecipeId = id;
+// ─── Recipe Sheet ───
+function renderSheetRecipeContent(r) {
   document.getElementById('sheetBody').innerHTML = `
     <div class="sheet-emoji">${r.emoji || '🍽️'}</div>
     <h1 class="sheet-title">${esc(r.title)}</h1>
@@ -759,29 +841,113 @@ function openRecipe(id) {
       </div>
     ` : ''}
   `;
+}
+
+function renderSheetActions(isSaved) {
+  const actions = document.getElementById('sheetActions');
+  actions.innerHTML = `
+    ${!isSaved ? '<span class="unsaved-badge">Unsaved</span>' : ''}
+    <button class="sheet-action-btn save-btn ${isSaved ? 'saved' : ''}" onclick="saveCurrentRecipe()" title="${isSaved ? 'Saved' : 'Save to My Recipes'}">
+      ${isSaved ? '✓' : '💾'}
+    </button>
+    <button class="sheet-action-btn" onclick="shareRecipe()" title="Share">📤</button>
+    <button class="sheet-action-btn danger" onclick="deleteRecipe()" title="Delete">🗑️</button>
+  `;
+}
+
+function renderChatHistory(recipe) {
+  const chatMessages = document.getElementById('chatMessages');
+  chatMessages.innerHTML = '';
+  const history = recipe.conversationHistory || [];
+  for (let i = 0; i < history.length; i++) {
+    const msg = history[i];
+    if (msg.role === 'user') {
+      appendChatBubbleDOM('user', msg.content);
+    } else if (msg.role === 'assistant') {
+      try {
+        const parsed = JSON.parse(msg.content);
+        appendChatBubbleDOM('assistant', parsed.chatMessage || 'Recipe ready!');
+      } catch {
+        appendChatBubbleDOM('assistant', msg.content);
+      }
+    }
+  }
+}
+
+function openRecipeWithChat(recipe, isSaved) {
+  activeSheetRecipe = recipe;
+  activeSheetRecipe._saved = isSaved;
+  activeSheetRecipe._chatDirty = false;
+
+  renderSheetRecipeContent(recipe);
+  renderSheetActions(isSaved);
+
+  // Show chat
+  document.getElementById('chatSection').style.display = 'block';
+  document.getElementById('chatInputBar').style.display = 'flex';
+  renderChatHistory(recipe);
+
   document.getElementById('recipeSheet').classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  // Scroll to top
+  document.querySelector('.sheet-scroll').scrollTop = 0;
+}
+
+function openRecipe(id) {
+  const recipes = getRecipes();
+  const r = recipes.find(x => x.id === id);
+  if (!r) return;
+  openRecipeWithChat({ ...r }, true);
 }
 
 function closeSheet() {
+  if (activeSheetRecipe && !activeSheetRecipe._saved && activeSheetRecipe._chatDirty) {
+    if (!confirm('Discard this recipe without saving?')) return;
+  }
   document.getElementById('recipeSheet').classList.remove('open');
   document.body.style.overflow = '';
-  currentRecipeId = null;
+  activeSheetRecipe = null;
+  document.getElementById('chatSection').style.display = 'none';
+  document.getElementById('chatInputBar').style.display = 'none';
+}
+
+function saveCurrentRecipe() {
+  if (!activeSheetRecipe) return;
+  const recipes = getRecipes();
+  // Strip internal flags before saving
+  const toSave = { ...activeSheetRecipe };
+  delete toSave._saved;
+  delete toSave._chatDirty;
+
+  const idx = recipes.findIndex(r => r.id === toSave.id);
+  if (idx >= 0) {
+    recipes[idx] = toSave;
+  } else {
+    recipes.unshift(toSave);
+  }
+  saveRecipes(recipes);
+  activeSheetRecipe._saved = true;
+  renderSheetActions(true);
+  renderRecipes(document.getElementById('searchInput').value);
+  showToast('Recipe saved!');
 }
 
 function deleteRecipe() {
-  if (!currentRecipeId) return;
+  if (!activeSheetRecipe) return;
+  if (!confirm('Delete this recipe?')) return;
   let recipes = getRecipes();
-  recipes = recipes.filter(r => r.id !== currentRecipeId);
+  recipes = recipes.filter(r => r.id !== activeSheetRecipe.id);
   saveRecipes(recipes);
+  activeSheetRecipe._saved = false;
+  activeSheetRecipe._chatDirty = false;
   closeSheet();
   renderRecipes(document.getElementById('searchInput').value);
   showToast('Recipe deleted');
 }
 
 async function shareRecipe() {
-  const recipes = getRecipes();
-  const r = recipes.find(x => x.id === currentRecipeId);
+  const r = activeSheetRecipe;
   if (!r) return;
   const text = `${r.emoji} ${r.title}\n\n${r.description}\n\nIngredients:\n${(r.ingredients||[]).map(i => '• ' + i).join('\n')}\n\nSteps:\n${(r.steps||[]).map((s,i) => (i+1) + '. ' + s).join('\n')}${r.notes ? '\n\nNotes: ' + r.notes : ''}`;
   if (navigator.share) {
@@ -789,6 +955,138 @@ async function shareRecipe() {
   } else {
     await navigator.clipboard.writeText(text);
     showToast('Copied to clipboard');
+  }
+}
+
+// ─── Chat ───
+function appendChatBubbleDOM(role, text) {
+  const chatMessages = document.getElementById('chatMessages');
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble ${role}`;
+  bubble.textContent = text;
+  chatMessages.appendChild(bubble);
+  // Scroll chat into view
+  const sheetScroll = document.querySelector('.sheet-scroll');
+  setTimeout(() => sheetScroll.scrollTop = sheetScroll.scrollHeight, 50);
+}
+
+function showTypingIndicator() {
+  const chatMessages = document.getElementById('chatMessages');
+  const el = document.createElement('div');
+  el.className = 'typing-indicator';
+  el.id = 'typingIndicator';
+  el.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  chatMessages.appendChild(el);
+  const sheetScroll = document.querySelector('.sheet-scroll');
+  setTimeout(() => sheetScroll.scrollTop = sheetScroll.scrollHeight, 50);
+}
+
+function removeTypingIndicator() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+async function sendChatMessage() {
+  if (chatInFlight) return;
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const apiKey = getApiKey();
+  if (!apiKey) { showToast('Set your API key in Settings first'); return; }
+
+  input.value = '';
+  chatInFlight = true;
+  document.getElementById('chatSendBtn').disabled = true;
+
+  appendChatBubbleDOM('user', msg);
+  showTypingIndicator();
+
+  const recipe = activeSheetRecipe;
+  if (!recipe.conversationHistory) recipe.conversationHistory = [];
+  recipe.conversationHistory.push({ role: 'user', content: msg });
+  recipe._chatDirty = true;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        system: RECIPE_SYSTEM_PROMPT,
+        messages: recipe.conversationHistory
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.content[0].text;
+    recipe.conversationHistory.push({ role: 'assistant', content: text });
+
+    removeTypingIndicator();
+
+    // Try to parse and update recipe; if JSON fails, keep old recipe intact
+    try {
+      const updated = JSON.parse(text);
+      const preserveId = recipe.id;
+      const preserveHistory = recipe.conversationHistory;
+      const preserveSaved = recipe._saved;
+      const preserveDirty = recipe._chatDirty;
+
+      recipe.emoji = updated.emoji || recipe.emoji;
+      recipe.title = updated.title || recipe.title;
+      recipe.description = updated.description || recipe.description;
+      recipe.tags = updated.tags || recipe.tags;
+      recipe.ingredients = updated.ingredients || recipe.ingredients;
+      recipe.steps = updated.steps || recipe.steps;
+      recipe.notes = updated.notes !== undefined ? updated.notes : recipe.notes;
+
+      recipe.id = preserveId;
+      recipe.conversationHistory = preserveHistory;
+      recipe._saved = preserveSaved;
+      recipe._chatDirty = preserveDirty;
+
+      appendChatBubbleDOM('assistant', updated.chatMessage || 'Recipe updated!');
+      renderSheetRecipeContent(recipe);
+    } catch {
+      // JSON parse failed — keep recipe as-is, show raw response
+      appendChatBubbleDOM('assistant', text);
+    }
+
+    // If already saved, auto-update in storage
+    if (recipe._saved) {
+      const recipes = getRecipes();
+      const idx = recipes.findIndex(r => r.id === recipe.id);
+      if (idx >= 0) {
+        const toSave = { ...recipe };
+        delete toSave._saved;
+        delete toSave._chatDirty;
+        recipes[idx] = toSave;
+        saveRecipes(recipes);
+        renderRecipes(document.getElementById('searchInput').value);
+      }
+    }
+  } catch (e) {
+    removeTypingIndicator();
+    // Remove the failed user message from history
+    recipe.conversationHistory.pop();
+    const errBubble = document.createElement('div');
+    errBubble.className = 'chat-bubble error';
+    errBubble.textContent = 'Error: ' + e.message;
+    document.getElementById('chatMessages').appendChild(errBubble);
+  } finally {
+    chatInFlight = false;
+    document.getElementById('chatSendBtn').disabled = false;
   }
 }
 
@@ -806,17 +1104,6 @@ async function generateRecipe() {
   indicator.classList.add('active');
   hideError('genError');
 
-  const systemPrompt = `You are a professional chef and recipe creator. Generate a recipe based on the user's request. Respond ONLY with a valid JSON object (no markdown, no code fences) in this exact format:
-{
-  "emoji": "single relevant food emoji",
-  "title": "Recipe Title",
-  "description": "One or two sentence description",
-  "tags": ["tag1", "tag2", "tag3"],
-  "ingredients": ["ingredient 1 with amount", "ingredient 2 with amount"],
-  "steps": ["Step 1 instruction", "Step 2 instruction"],
-  "notes": "Optional tips or variations"
-}`;
-
   const userMsg = `Create a recipe for: ${prompt}${prefs ? `\n\nPreferences/constraints: ${prefs}` : ''}`;
 
   try {
@@ -831,7 +1118,7 @@ async function generateRecipe() {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1024,
-        system: systemPrompt,
+        system: RECIPE_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userMsg }]
       })
     });
@@ -845,17 +1132,16 @@ async function generateRecipe() {
     const text = data.content[0].text;
     const recipe = JSON.parse(text);
     recipe.id = 'r_' + Date.now();
-
-    const recipes = getRecipes();
-    recipes.unshift(recipe);
-    saveRecipes(recipes);
+    recipe.conversationHistory = [
+      { role: 'user', content: userMsg },
+      { role: 'assistant', content: text }
+    ];
 
     document.getElementById('genPrompt').value = '';
     document.getElementById('genPrefs').value = '';
-    renderRecipes();
-    switchTab('tabRecipes');
-    showToast('Recipe created!');
-    setTimeout(() => openRecipe(recipe.id), 300);
+
+    // Open in sheet — NOT saved yet
+    openRecipeWithChat(recipe, false);
   } catch (e) {
     showError('genError', e.message);
   } finally {
@@ -884,7 +1170,12 @@ function hideError(id) { document.getElementById(id).classList.remove('show'); }
 // ─── Init ───
 renderProfilePicker();
 
-// Handle back button for sheet
+// Chat enter key
+document.getElementById('chatInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+});
+
+// Escape closes sheet
 window.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
 </script>
 </body>
