@@ -12,6 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root {
   --bg-primary: #0d0f1a;
@@ -629,16 +630,19 @@ body {
 <div class="toast" id="toast"></div>
 
 <script>
+// ─── Supabase Client ───
+const SUPABASE_URL = 'https://ecvradbgnzhsvlhefiog.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjdnJhZGJnbnpoc3ZsaGVmaW9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MDkyMDAsImV4cCI6MjA5MDQ4NTIwMH0.UA_p6x4anfwGPq_GmM0U0GnI_qRmD23jf7BmlCNwT4w';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 // ─── State ───
 let currentProfile = null;
 let activeSheetRecipe = null;
 let chatInFlight = false;
+let cachedProfiles = [];
+let cachedRecipes = [];
 
 const PROFILE_COLORS = ['#a78bfa','#22d3ee','#f472b6','#818cf8','#34d399','#fb923c','#e879f9','#38bdf8'];
-const DEFAULT_PROFILES = [
-  { id: 'aaron', name: 'Aaron', emoji: '👨‍🍳', color: '#a78bfa' },
-  { id: 'hannah', name: 'Hannah', emoji: '👩‍🍳', color: '#22d3ee' }
-];
 
 const RECIPE_SYSTEM_PROMPT = `You are a professional chef and recipe creator. When creating or modifying a recipe, respond ONLY with a valid JSON object (no markdown, no code fences) in this exact format:
 {
@@ -653,32 +657,93 @@ const RECIPE_SYSTEM_PROMPT = `You are a professional chef and recipe creator. Wh
 }
 The chatMessage field should be a short conversational response (1-2 sentences) explaining what you did. When the user asks for modifications, update the full recipe JSON accordingly and explain the change in chatMessage.`;
 
-// ─── Storage ───
-function getProfiles() {
-  let p = JSON.parse(localStorage.getItem('rr_profiles') || 'null');
-  if (!p) { p = DEFAULT_PROFILES; localStorage.setItem('rr_profiles', JSON.stringify(p)); }
-  return p;
-}
-function saveProfiles(p) { localStorage.setItem('rr_profiles', JSON.stringify(p)); }
-function getRecipes() {
-  if (!currentProfile) return [];
-  return JSON.parse(localStorage.getItem('rr_recipes_' + currentProfile.id) || '[]');
-}
-function saveRecipes(recipes) {
-  if (!currentProfile) return;
-  localStorage.setItem('rr_recipes_' + currentProfile.id, JSON.stringify(recipes));
-}
+// ─── Local Storage (profile_id + API key only) ───
 function getApiKey() { return localStorage.getItem('rr_api_key') || ''; }
 function setApiKey(k) { localStorage.setItem('rr_api_key', k); }
+function getSavedProfileId() { return localStorage.getItem('rr_profile_id') || ''; }
+function setSavedProfileId(id) { localStorage.setItem('rr_profile_id', id); }
+
+// ─── Supabase: Profiles ───
+async function fetchProfiles() {
+  const { data, error } = await sb.from('profiles').select('*').order('created_at');
+  if (error) { showToast('Failed to load profiles'); return []; }
+  cachedProfiles = data || [];
+  return cachedProfiles;
+}
+
+async function createProfile(name, emoji, color) {
+  const { data, error } = await sb.from('profiles').insert({ name, emoji, color }).select().single();
+  if (error) { showToast('Failed to create profile: ' + error.message); return null; }
+  return data;
+}
+
+async function removeProfile(id) {
+  // Delete recipes first, then profile
+  await sb.from('recipes').delete().eq('profile_id', id);
+  const { error } = await sb.from('profiles').delete().eq('id', id);
+  if (error) { showToast('Failed to remove profile'); return false; }
+  return true;
+}
+
+// ─── Supabase: Recipes ───
+async function fetchRecipes() {
+  if (!currentProfile) { cachedRecipes = []; return []; }
+  const { data, error } = await sb.from('recipes').select('*')
+    .eq('profile_id', currentProfile.id)
+    .order('created_at', { ascending: false });
+  if (error) { showToast('Failed to load recipes'); return []; }
+  cachedRecipes = data || [];
+  return cachedRecipes;
+}
+
+async function insertRecipe(recipe) {
+  const row = {
+    profile_id: currentProfile.id,
+    title: recipe.title,
+    emoji: recipe.emoji,
+    description: recipe.description,
+    tags: recipe.tags || [],
+    ingredients: recipe.ingredients || [],
+    steps: recipe.steps || [],
+    notes: recipe.notes || '',
+    conversation_history: recipe.conversation_history || []
+  };
+  const { data, error } = await sb.from('recipes').insert(row).select().single();
+  if (error) { showToast('Failed to save recipe: ' + error.message); return null; }
+  return data;
+}
+
+async function updateRecipe(id, fields) {
+  const row = {};
+  if (fields.title !== undefined) row.title = fields.title;
+  if (fields.emoji !== undefined) row.emoji = fields.emoji;
+  if (fields.description !== undefined) row.description = fields.description;
+  if (fields.tags !== undefined) row.tags = fields.tags;
+  if (fields.ingredients !== undefined) row.ingredients = fields.ingredients;
+  if (fields.steps !== undefined) row.steps = fields.steps;
+  if (fields.notes !== undefined) row.notes = fields.notes;
+  if (fields.conversation_history !== undefined) row.conversation_history = fields.conversation_history;
+  row.updated_at = new Date().toISOString();
+  const { data, error } = await sb.from('recipes').update(row).eq('id', id).select().single();
+  if (error) { showToast('Failed to update recipe'); return null; }
+  return data;
+}
+
+async function deleteRecipeFromDB(id) {
+  const { error } = await sb.from('recipes').delete().eq('id', id);
+  if (error) { showToast('Failed to delete recipe'); return false; }
+  return true;
+}
 
 // ─── Profile Picker ───
-function renderProfilePicker() {
+async function renderProfilePicker() {
   const grid = document.getElementById('profilesGrid');
-  const profiles = getProfiles();
+  grid.innerHTML = '<div style="color:var(--text-muted)">Loading...</div>';
+  const profiles = await fetchProfiles();
   grid.innerHTML = profiles.map(p => `
     <div class="profile-card" onclick="selectProfile('${p.id}')">
       <div class="profile-avatar" style="background: ${p.color}20; border-color: ${p.color}">${p.emoji}</div>
-      <div class="profile-name">${p.name}</div>
+      <div class="profile-name">${esc(p.name)}</div>
     </div>
   `).join('') + `
     <div class="profile-card add-profile-card" onclick="openAddProfile()">
@@ -688,10 +753,11 @@ function renderProfilePicker() {
   `;
 }
 
-function selectProfile(id) {
-  const profiles = getProfiles();
+async function selectProfile(id) {
+  const profiles = cachedProfiles.length ? cachedProfiles : await fetchProfiles();
   currentProfile = profiles.find(p => p.id === id);
   if (!currentProfile) return;
+  setSavedProfileId(id);
   applyAccent(currentProfile.color);
   document.getElementById('profilePicker').classList.add('hidden');
   document.getElementById('app').classList.add('active');
@@ -699,7 +765,8 @@ function selectProfile(id) {
   document.getElementById('headerAvatar').style.background = currentProfile.color + '20';
   document.getElementById('headerName').textContent = currentProfile.name;
   document.getElementById('apiKeyInput').value = getApiKey();
-  renderRecipes();
+  await fetchRecipes();
+  renderRecipesFromCache();
   renderProfileManageList();
 }
 
@@ -707,6 +774,7 @@ function switchProfile() {
   document.getElementById('app').classList.remove('active');
   document.getElementById('profilePicker').classList.remove('hidden');
   currentProfile = null;
+  cachedRecipes = [];
   renderProfilePicker();
 }
 
@@ -732,37 +800,33 @@ function renderColorOptions() {
 }
 function pickColor(c) { selectedColor = c; renderColorOptions(); }
 
-function saveNewProfile() {
+async function saveNewProfile() {
   const name = document.getElementById('newProfileName').value.trim();
   const emoji = document.getElementById('newProfileEmoji').value.trim() || '👤';
   if (!name) return;
-  const profiles = getProfiles();
-  const id = name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
-  profiles.push({ id, name, emoji, color: selectedColor });
-  saveProfiles(profiles);
+  const profile = await createProfile(name, emoji, selectedColor);
+  if (!profile) return;
   closeAddProfile();
   renderProfilePicker();
 }
 
 // ─── Profile Management ───
 function renderProfileManageList() {
-  const profiles = getProfiles();
-  document.getElementById('profileManageList').innerHTML = profiles.map(p => `
+  document.getElementById('profileManageList').innerHTML = cachedProfiles.map(p => `
     <div class="profile-manage-item">
       <div class="pm-avatar" style="background:${p.color}20; border-color:${p.color}">${p.emoji}</div>
-      <span>${p.name}</span>
+      <span>${esc(p.name)}</span>
       <button class="delete-profile-btn" onclick="deleteProfile('${p.id}')">Remove</button>
     </div>
   `).join('');
 }
 
-function deleteProfile(id) {
+async function deleteProfile(id) {
   if (id === currentProfile?.id) { showToast('Cannot delete active profile'); return; }
-  let profiles = getProfiles();
-  if (profiles.length <= 1) { showToast('Need at least one profile'); return; }
-  profiles = profiles.filter(p => p.id !== id);
-  saveProfiles(profiles);
-  localStorage.removeItem('rr_recipes_' + id);
+  if (cachedProfiles.length <= 1) { showToast('Need at least one profile'); return; }
+  const ok = await removeProfile(id);
+  if (!ok) return;
+  await fetchProfiles();
   renderProfileManageList();
   showToast('Profile removed');
 }
@@ -776,8 +840,8 @@ function switchTab(tabId) {
 }
 
 // ─── Recipes ───
-function renderRecipes(filter = '') {
-  let recipes = getRecipes();
+function renderRecipesFromCache(filter = '') {
+  let recipes = cachedRecipes;
   if (filter) {
     const q = filter.toLowerCase();
     recipes = recipes.filter(r =>
@@ -799,7 +863,7 @@ function renderRecipes(filter = '') {
     return;
   }
   container.innerHTML = `
-    <h2 class="section-title">${currentProfile.name}'s Recipes</h2>
+    <h2 class="section-title">${esc(currentProfile.name)}'s Recipes</h2>
     <div class="recipe-grid">
       ${recipes.map(r => `
         <div class="recipe-card" onclick="openRecipe('${r.id}')">
@@ -813,7 +877,7 @@ function renderRecipes(filter = '') {
   `;
 }
 
-function handleSearch() { renderRecipes(document.getElementById('searchInput').value); }
+function handleSearch() { renderRecipesFromCache(document.getElementById('searchInput').value); }
 
 // ─── Recipe Sheet ───
 function renderSheetRecipeContent(r) {
@@ -858,7 +922,7 @@ function renderSheetActions(isSaved) {
 function renderChatHistory(recipe) {
   const chatMessages = document.getElementById('chatMessages');
   chatMessages.innerHTML = '';
-  const history = recipe.conversationHistory || [];
+  const history = recipe.conversation_history || [];
   for (let i = 0; i < history.length; i++) {
     const msg = history[i];
     if (msg.role === 'user') {
@@ -882,21 +946,17 @@ function openRecipeWithChat(recipe, isSaved) {
   renderSheetRecipeContent(recipe);
   renderSheetActions(isSaved);
 
-  // Show chat
   document.getElementById('chatSection').style.display = 'block';
   document.getElementById('chatInputBar').style.display = 'flex';
   renderChatHistory(recipe);
 
   document.getElementById('recipeSheet').classList.add('open');
   document.body.style.overflow = 'hidden';
-
-  // Scroll to top
   document.querySelector('.sheet-scroll').scrollTop = 0;
 }
 
 function openRecipe(id) {
-  const recipes = getRecipes();
-  const r = recipes.find(x => x.id === id);
+  const r = cachedRecipes.find(x => x.id === id);
   if (!r) return;
   openRecipeWithChat({ ...r }, true);
 }
@@ -912,37 +972,48 @@ function closeSheet() {
   document.getElementById('chatInputBar').style.display = 'none';
 }
 
-function saveCurrentRecipe() {
+async function saveCurrentRecipe() {
   if (!activeSheetRecipe) return;
-  const recipes = getRecipes();
-  // Strip internal flags before saving
-  const toSave = { ...activeSheetRecipe };
-  delete toSave._saved;
-  delete toSave._chatDirty;
+  const r = activeSheetRecipe;
+  const fields = {
+    title: r.title, emoji: r.emoji, description: r.description,
+    tags: r.tags, ingredients: r.ingredients, steps: r.steps,
+    notes: r.notes, conversation_history: r.conversation_history || []
+  };
 
-  const idx = recipes.findIndex(r => r.id === toSave.id);
-  if (idx >= 0) {
-    recipes[idx] = toSave;
+  let saved;
+  if (r._saved && r.id) {
+    // Update existing
+    saved = await updateRecipe(r.id, fields);
   } else {
-    recipes.unshift(toSave);
+    // Insert new
+    saved = await insertRecipe({ ...fields, conversation_history: r.conversation_history || [] });
   }
-  saveRecipes(recipes);
+  if (!saved) return;
+
+  // Update activeSheetRecipe with DB row (gets real id, timestamps)
+  Object.assign(activeSheetRecipe, saved);
   activeSheetRecipe._saved = true;
+  activeSheetRecipe._chatDirty = false;
   renderSheetActions(true);
-  renderRecipes(document.getElementById('searchInput').value);
+
+  await fetchRecipes();
+  renderRecipesFromCache(document.getElementById('searchInput').value);
   showToast('Recipe saved!');
 }
 
-function deleteRecipe() {
+async function deleteRecipe() {
   if (!activeSheetRecipe) return;
   if (!confirm('Delete this recipe?')) return;
-  let recipes = getRecipes();
-  recipes = recipes.filter(r => r.id !== activeSheetRecipe.id);
-  saveRecipes(recipes);
+  if (activeSheetRecipe._saved && activeSheetRecipe.id) {
+    const ok = await deleteRecipeFromDB(activeSheetRecipe.id);
+    if (!ok) return;
+  }
   activeSheetRecipe._saved = false;
   activeSheetRecipe._chatDirty = false;
   closeSheet();
-  renderRecipes(document.getElementById('searchInput').value);
+  await fetchRecipes();
+  renderRecipesFromCache(document.getElementById('searchInput').value);
   showToast('Recipe deleted');
 }
 
@@ -965,7 +1036,6 @@ function appendChatBubbleDOM(role, text) {
   bubble.className = `chat-bubble ${role}`;
   bubble.textContent = text;
   chatMessages.appendChild(bubble);
-  // Scroll chat into view
   const sheetScroll = document.querySelector('.sheet-scroll');
   setTimeout(() => sheetScroll.scrollTop = sheetScroll.scrollHeight, 50);
 }
@@ -1003,8 +1073,8 @@ async function sendChatMessage() {
   showTypingIndicator();
 
   const recipe = activeSheetRecipe;
-  if (!recipe.conversationHistory) recipe.conversationHistory = [];
-  recipe.conversationHistory.push({ role: 'user', content: msg });
+  if (!recipe.conversation_history) recipe.conversation_history = [];
+  recipe.conversation_history.push({ role: 'user', content: msg });
   recipe._chatDirty = true;
 
   try {
@@ -1020,7 +1090,7 @@ async function sendChatMessage() {
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1024,
         system: RECIPE_SYSTEM_PROMPT,
-        messages: recipe.conversationHistory
+        messages: recipe.conversation_history
       })
     });
 
@@ -1031,18 +1101,13 @@ async function sendChatMessage() {
 
     const data = await res.json();
     const text = data.content[0].text;
-    recipe.conversationHistory.push({ role: 'assistant', content: text });
+    recipe.conversation_history.push({ role: 'assistant', content: text });
 
     removeTypingIndicator();
 
     // Try to parse and update recipe; if JSON fails, keep old recipe intact
     try {
       const updated = JSON.parse(text);
-      const preserveId = recipe.id;
-      const preserveHistory = recipe.conversationHistory;
-      const preserveSaved = recipe._saved;
-      const preserveDirty = recipe._chatDirty;
-
       recipe.emoji = updated.emoji || recipe.emoji;
       recipe.title = updated.title || recipe.title;
       recipe.description = updated.description || recipe.description;
@@ -1051,35 +1116,25 @@ async function sendChatMessage() {
       recipe.steps = updated.steps || recipe.steps;
       recipe.notes = updated.notes !== undefined ? updated.notes : recipe.notes;
 
-      recipe.id = preserveId;
-      recipe.conversationHistory = preserveHistory;
-      recipe._saved = preserveSaved;
-      recipe._chatDirty = preserveDirty;
-
       appendChatBubbleDOM('assistant', updated.chatMessage || 'Recipe updated!');
       renderSheetRecipeContent(recipe);
     } catch {
-      // JSON parse failed — keep recipe as-is, show raw response
       appendChatBubbleDOM('assistant', text);
     }
 
-    // If already saved, auto-update in storage
-    if (recipe._saved) {
-      const recipes = getRecipes();
-      const idx = recipes.findIndex(r => r.id === recipe.id);
-      if (idx >= 0) {
-        const toSave = { ...recipe };
-        delete toSave._saved;
-        delete toSave._chatDirty;
-        recipes[idx] = toSave;
-        saveRecipes(recipes);
-        renderRecipes(document.getElementById('searchInput').value);
-      }
+    // If already saved, auto-update in Supabase
+    if (recipe._saved && recipe.id) {
+      await updateRecipe(recipe.id, {
+        title: recipe.title, emoji: recipe.emoji, description: recipe.description,
+        tags: recipe.tags, ingredients: recipe.ingredients, steps: recipe.steps,
+        notes: recipe.notes, conversation_history: recipe.conversation_history
+      });
+      await fetchRecipes();
+      renderRecipesFromCache(document.getElementById('searchInput').value);
     }
   } catch (e) {
     removeTypingIndicator();
-    // Remove the failed user message from history
-    recipe.conversationHistory.pop();
+    recipe.conversation_history.pop();
     const errBubble = document.createElement('div');
     errBubble.className = 'chat-bubble error';
     errBubble.textContent = 'Error: ' + e.message;
@@ -1131,8 +1186,7 @@ async function generateRecipe() {
     const data = await res.json();
     const text = data.content[0].text;
     const recipe = JSON.parse(text);
-    recipe.id = 'r_' + Date.now();
-    recipe.conversationHistory = [
+    recipe.conversation_history = [
       { role: 'user', content: userMsg },
       { role: 'assistant', content: text }
     ];
@@ -1140,7 +1194,7 @@ async function generateRecipe() {
     document.getElementById('genPrompt').value = '';
     document.getElementById('genPrefs').value = '';
 
-    // Open in sheet — NOT saved yet
+    // Open in sheet — NOT saved to Supabase yet
     openRecipeWithChat(recipe, false);
   } catch (e) {
     showError('genError', e.message);
@@ -1168,7 +1222,19 @@ function showError(id, msg) { const e = document.getElementById(id); e.textConte
 function hideError(id) { document.getElementById(id).classList.remove('show'); }
 
 // ─── Init ───
-renderProfilePicker();
+(async function init() {
+  // Try to auto-select remembered profile
+  const savedId = getSavedProfileId();
+  if (savedId) {
+    const profiles = await fetchProfiles();
+    const match = profiles.find(p => p.id === savedId);
+    if (match) {
+      await selectProfile(savedId);
+      return;
+    }
+  }
+  renderProfilePicker();
+})();
 
 // Chat enter key
 document.getElementById('chatInput').addEventListener('keydown', e => {
