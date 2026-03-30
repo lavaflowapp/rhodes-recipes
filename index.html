@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rhodes Recipes">
+<meta name="theme-color" content="#1a1410">
+<meta name="description" content="Rhodes Recipes — a family recipe vault">
+<title>Rhodes Recipes</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #1a1410;
+  --bg-secondary: #231e18;
+  --bg-card: #2a2420;
+  --bg-elevated: #332c25;
+  --text-primary: #f5e6d3;
+  --text-secondary: #c4a882;
+  --text-muted: #8a7560;
+  --border: #3d352c;
+  --accent: #d4915e;
+  --accent-glow: rgba(212, 145, 94, 0.15);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.5);
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── Typography ─── */
+.brand { font-family: 'Playfair Display', serif; font-weight: 700; }
+.brand-accent { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; }
+
+/* ─── Profile Picker Overlay ─── */
+#profilePicker {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg-primary);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.4s ease;
+}
+#profilePicker.hidden { display: none; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.picker-brand {
+  font-size: 2.4rem; margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.picker-subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 48px; letter-spacing: 0.5px; }
+
+.profiles-grid {
+  display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;
+  max-width: 500px; margin-bottom: 32px;
+}
+
+.profile-card {
+  width: 130px; padding: 28px 16px 20px;
+  background: var(--bg-card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); cursor: pointer;
+  text-align: center; transition: var(--transition);
+}
+.profile-card:hover, .profile-card:active {
+  border-color: var(--accent); background: var(--bg-elevated);
+  transform: translateY(-4px); box-shadow: var(--shadow);
+}
+.profile-avatar {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; margin: 0 auto 12px;
+  border: 2px solid var(--border);
+}
+.profile-card:hover .profile-avatar { border-color: var(--accent); }
+.profile-name { font-weight: 600; font-size: 0.95rem; }
+
+.add-profile-card {
+  border-style: dashed; border-color: var(--border);
+}
+.add-profile-card .profile-avatar {
+  font-size: 1.8rem; border-style: dashed; color: var(--text-muted);
+}
+.add-profile-card .profile-name { color: var(--text-muted); }
+
+/* ─── Add Profile Modal ─── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; animation: fadeIn 0.2s ease;
+}
+.modal-overlay.hidden { display: none; }
+
+.modal {
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 32px;
+  width: 100%; max-width: 380px; box-shadow: var(--shadow-lg);
+}
+.modal h2 { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: 24px; }
+.modal label { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; }
+.modal input[type="text"] {
+  width: 100%; padding: 12px 16px; background: var(--bg-secondary);
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text-primary); font-size: 1rem; outline: none;
+  transition: var(--transition); margin-bottom: 20px;
+}
+.modal input[type="text"]:focus { border-color: var(--accent); }
+
+.color-options { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+.color-dot {
+  width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+  border: 3px solid transparent; transition: var(--transition);
+}
+.color-dot.selected, .color-dot:hover { border-color: var(--text-primary); transform: scale(1.15); }
+
+.modal-actions { display: flex; gap: 12px; }
+.modal-actions button { flex: 1; }
+
+/* ─── Buttons ─── */
+.btn {
+  padding: 12px 20px; border: none; border-radius: var(--radius-sm);
+  font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
+  cursor: pointer; transition: var(--transition);
+}
+.btn-primary { background: var(--accent); color: #1a1410; }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--bg-elevated); }
+
+/* ─── Main App Shell ─── */
+#app { display: none; min-height: 100dvh; padding-bottom: 80px; }
+#app.active { display: block; }
+
+/* ─── Header ─── */
+.app-header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(26, 20, 16, 0.85); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 20px 12px;
+}
+.header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.header-brand { font-size: 1.35rem; }
+.header-profile {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  padding: 6px 12px 6px 6px; border-radius: 20px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  transition: var(--transition);
+}
+.header-profile:hover { border-color: var(--accent); }
+.header-profile-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem;
+}
+.header-profile-name { font-size: 0.8rem; font-weight: 500; }
+
+/* ─── Search Bar ─── */
+.search-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 16px;
+  transition: var(--transition);
+}
+.search-bar:focus-within { border-color: var(--accent); }
+.search-bar svg { flex-shrink: 0; color: var(--text-muted); }
+.search-bar input {
+  flex: 1; border: none; background: none; color: var(--text-primary);
+  font-size: 0.95rem; outline: none;
+}
+.search-bar input::placeholder { color: var(--text-muted); }
+
+/* ─── Tab Bar ─── */
+.tab-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(26, 20, 16, 0.92); backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex; padding: 8px 0; padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+.tab-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 4px; padding: 8px; cursor: pointer; background: none; border: none;
+  color: var(--text-muted); transition: var(--transition);
+}
+.tab-item.active { color: var(--accent); }
+.tab-item svg { width: 22px; height: 22px; }
+.tab-label { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* ─── Content Sections ─── */
+.tab-content { display: none; padding: 20px; }
+.tab-content.active { display: block; }
+
+/* ─── Recipe Grid ─── */
+.section-title {
+  font-family: 'Playfair Display', serif; font-size: 1.3rem;
+  margin-bottom: 16px; color: var(--text-primary);
+}
+.recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+
+.recipe-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 16px;
+  cursor: pointer; transition: var(--transition);
+  position: relative; overflow: hidden;
+}
+.recipe-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; background: var(--accent); opacity: 0;
+  transition: var(--transition);
+}
+.recipe-card:hover, .recipe-card:active {
+  border-color: var(--accent); transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.recipe-card:hover::before { opacity: 1; }
+
+.recipe-emoji { font-size: 2.2rem; margin-bottom: 12px; }
+.recipe-title {
+  font-family: 'Playfair Display', serif; font-size: 1rem;
+  font-weight: 600; margin-bottom: 6px; line-height: 1.3;
+}
+.recipe-desc {
+  font-size: 0.78rem; color: var(--text-secondary);
+  line-height: 1.5; margin-bottom: 12px;
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.recipe-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.recipe-tag {
+  font-size: 0.65rem; padding: 3px 8px;
+  background: var(--accent-glow); color: var(--accent);
+  border-radius: 20px; font-weight: 500;
+}
+
+.empty-state {
+  text-align: center; padding: 60px 20px; color: var(--text-muted);
+}
+.empty-state .empty-icon { font-size: 3rem; margin-bottom: 16px; }
+.empty-state h3 { font-family: 'Playfair Display', serif; color: var(--text-secondary); margin-bottom: 8px; }
+.empty-state p { font-size: 0.85rem; margin-bottom: 24px; line-height: 1.6; }
+
+/* ─── Generate Tab ─── */
+.generate-form { max-width: 500px; }
+.form-group { margin-bottom: 20px; }
+.form-group label {
+  display: block; font-size: 0.8rem; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px;
+}
+.form-input, .form-textarea {
+  width: 100%; padding: 14px 16px; background: var(--bg-card);
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text-primary); font-size: 0.95rem; font-family: 'Inter', sans-serif;
+  outline: none; transition: var(--transition);
+}
+.form-input:focus, .form-textarea:focus { border-color: var(--accent); }
+.form-textarea { min-height: 120px; resize: vertical; line-height: 1.6; }
+
+.generate-btn {
+  width: 100%; padding: 16px; font-size: 1rem; font-weight: 600;
+  border-radius: var(--radius-sm); border: none; cursor: pointer;
+  background: linear-gradient(135deg, var(--accent), #c47a45);
+  color: #1a1410; transition: var(--transition);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.generate-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; filter: none; }
+
+.generating-indicator {
+  display: none; text-align: center; padding: 40px 20px; color: var(--text-secondary);
+}
+.generating-indicator.active { display: block; }
+.generating-spinner {
+  width: 40px; height: 40px; border: 3px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Recipe Detail Sheet ─── */
+.recipe-sheet {
+  position: fixed; inset: 0; z-index: 500;
+  background: var(--bg-primary);
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.recipe-sheet.open { transform: translateY(0); }
+
+.sheet-header {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(26, 20, 16, 0.9); backdrop-filter: blur(20px);
+  padding: 16px 20px; display: flex; align-items: center;
+  justify-content: space-between; border-bottom: 1px solid var(--border);
+}
+.sheet-close {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 50%; width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-primary); transition: var(--transition);
+}
+.sheet-close:hover { background: var(--bg-elevated); }
+.sheet-actions { display: flex; gap: 8px; }
+.sheet-action-btn {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 50%; width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-primary); font-size: 1.1rem;
+  transition: var(--transition);
+}
+.sheet-action-btn:hover { background: var(--bg-elevated); border-color: var(--accent); }
+.sheet-action-btn.danger:hover { border-color: #e05555; color: #e05555; }
+
+.sheet-body { padding: 28px 20px 100px; max-width: 600px; margin: 0 auto; }
+.sheet-emoji { font-size: 3.5rem; margin-bottom: 16px; }
+.sheet-title {
+  font-family: 'Playfair Display', serif; font-size: 1.8rem;
+  font-weight: 700; margin-bottom: 8px; line-height: 1.2;
+}
+.sheet-desc { color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; font-size: 0.95rem; }
+.sheet-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+.sheet-tag {
+  font-size: 0.75rem; padding: 5px 12px;
+  background: var(--accent-glow); color: var(--accent);
+  border-radius: 20px; font-weight: 500;
+}
+.sheet-section { margin-bottom: 28px; }
+.sheet-section-title {
+  font-family: 'Playfair Display', serif; font-size: 1.15rem;
+  margin-bottom: 14px; color: var(--text-primary);
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.sheet-section ul { list-style: none; }
+.sheet-section ul li {
+  padding: 8px 0; font-size: 0.9rem; line-height: 1.5;
+  color: var(--text-secondary); border-bottom: 1px solid rgba(61,53,44,0.4);
+  display: flex; align-items: baseline; gap: 10px;
+}
+.sheet-section ul li::before { content: '•'; color: var(--accent); font-weight: bold; flex-shrink: 0; }
+.sheet-section ol { list-style: none; counter-reset: steps; }
+.sheet-section ol li {
+  padding: 12px 0; font-size: 0.9rem; line-height: 1.6;
+  color: var(--text-secondary); border-bottom: 1px solid rgba(61,53,44,0.4);
+  display: flex; gap: 14px; counter-increment: steps;
+}
+.sheet-section ol li::before {
+  content: counter(steps); color: var(--accent);
+  font-family: 'Playfair Display', serif; font-weight: 700;
+  font-size: 1.1rem; min-width: 20px; flex-shrink: 0;
+}
+.sheet-notes {
+  background: var(--bg-card); border-radius: var(--radius-sm);
+  padding: 16px; color: var(--text-secondary); font-size: 0.88rem;
+  line-height: 1.7; border-left: 3px solid var(--accent);
+}
+
+/* ─── Settings Tab ─── */
+.settings-section {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+}
+.settings-title {
+  font-family: 'Playfair Display', serif; font-size: 1rem;
+  margin-bottom: 14px;
+}
+.settings-input-group { display: flex; gap: 10px; }
+.settings-input-group input { flex: 1; }
+.settings-note { font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+.profile-manage-list { display: flex; flex-direction: column; gap: 10px; }
+.profile-manage-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+}
+.profile-manage-item .profile-avatar { margin: 0; width: 36px; height: 36px; font-size: 1rem; }
+.profile-manage-item span { flex: 1; font-weight: 500; }
+.delete-profile-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-muted);
+  border-radius: 8px; padding: 4px 10px; font-size: 0.75rem; cursor: pointer;
+  transition: var(--transition);
+}
+.delete-profile-btn:hover { border-color: #e05555; color: #e05555; }
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  padding: 12px 24px; border-radius: var(--radius-sm);
+  font-size: 0.85rem; color: var(--text-primary);
+  box-shadow: var(--shadow-lg); opacity: 0; z-index: 600;
+  transition: all 0.3s ease; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ─── Error Message ─── */
+.error-msg {
+  background: rgba(224, 85, 85, 0.1); border: 1px solid rgba(224, 85, 85, 0.3);
+  border-radius: var(--radius-sm); padding: 12px 16px; margin-top: 16px;
+  color: #f0a0a0; font-size: 0.85rem; line-height: 1.5; display: none;
+}
+.error-msg.show { display: block; }
+
+@media (min-width: 600px) {
+  .recipe-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .sheet-body { padding: 40px 32px 100px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Profile Picker -->
+<div id="profilePicker">
+  <div class="picker-brand"><span class="brand">Rhodes </span><span class="brand-accent">Recipes</span></div>
+  <div class="picker-subtitle">Choose your cookbook</div>
+  <div class="profiles-grid" id="profilesGrid"></div>
+</div>
+
+<!-- Add Profile Modal -->
+<div class="modal-overlay hidden" id="addProfileModal">
+  <div class="modal">
+    <h2>New Profile</h2>
+    <label>Name</label>
+    <input type="text" id="newProfileName" placeholder="Enter name..." maxlength="20">
+    <label>Accent Color</label>
+    <div class="color-options" id="colorOptions"></div>
+    <label>Emoji</label>
+    <input type="text" id="newProfileEmoji" placeholder="Pick an emoji..." maxlength="4" value="👤">
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeAddProfile()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNewProfile()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+  <header class="app-header">
+    <div class="header-top">
+      <div class="header-brand"><span class="brand">Rhodes </span><span class="brand-accent">Recipes</span></div>
+      <div class="header-profile" onclick="switchProfile()">
+        <div class="header-profile-avatar" id="headerAvatar"></div>
+        <span class="header-profile-name" id="headerName"></span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+    </div>
+    <div class="search-bar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" placeholder="Search recipes..." id="searchInput" oninput="handleSearch()">
+    </div>
+  </header>
+
+  <!-- Recipes Tab -->
+  <div class="tab-content active" id="tabRecipes">
+    <div id="recipesContent"></div>
+  </div>
+
+  <!-- Generate Tab -->
+  <div class="tab-content" id="tabGenerate">
+    <h2 class="section-title">Generate a Recipe</h2>
+    <div class="generate-form">
+      <div class="form-group">
+        <label>What would you like to make?</label>
+        <input class="form-input" type="text" id="genPrompt" placeholder="e.g. Spicy Korean fried chicken...">
+      </div>
+      <div class="form-group">
+        <label>Preferences or constraints (optional)</label>
+        <textarea class="form-textarea" id="genPrefs" placeholder="e.g. gluten-free, serves 4, under 30 minutes..."></textarea>
+      </div>
+      <button class="generate-btn" id="generateBtn" onclick="generateRecipe()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Generate Recipe
+      </button>
+      <div class="generating-indicator" id="genIndicator">
+        <div class="generating-spinner"></div>
+        <p>Crafting your recipe...</p>
+      </div>
+      <div class="error-msg" id="genError"></div>
+    </div>
+  </div>
+
+  <!-- Settings Tab -->
+  <div class="tab-content" id="tabSettings">
+    <h2 class="section-title">Settings</h2>
+    <div class="settings-section">
+      <div class="settings-title">Anthropic API Key</div>
+      <div class="settings-input-group">
+        <input class="form-input" type="password" id="apiKeyInput" placeholder="sk-ant-...">
+        <button class="btn btn-primary" onclick="saveApiKey()">Save</button>
+      </div>
+      <div class="settings-note">Your API key is stored locally on this device and never sent anywhere except the Anthropic API.</div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-title">Profiles</div>
+      <div class="profile-manage-list" id="profileManageList"></div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-title">About</div>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+        <span class="brand">Rhodes </span><span class="brand-accent">Recipes</span> is a family recipe vault.
+        Generate recipes with AI, organize your favorites, and keep each family member's collection separate.
+      </p>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <nav class="tab-bar">
+    <button class="tab-item active" data-tab="tabRecipes" onclick="switchTab('tabRecipes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      <span class="tab-label">Recipes</span>
+    </button>
+    <button class="tab-item" data-tab="tabGenerate" onclick="switchTab('tabGenerate')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span class="tab-label">Generate</span>
+    </button>
+    <button class="tab-item" data-tab="tabSettings" onclick="switchTab('tabSettings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span class="tab-label">Settings</span>
+    </button>
+  </nav>
+</div>
+
+<!-- Recipe Detail Sheet -->
+<div class="recipe-sheet" id="recipeSheet">
+  <div class="sheet-header">
+    <button class="sheet-close" onclick="closeSheet()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="sheet-actions">
+      <button class="sheet-action-btn" onclick="shareRecipe()" title="Share">📤</button>
+      <button class="sheet-action-btn danger" onclick="deleteRecipe()" title="Delete">🗑️</button>
+    </div>
+  </div>
+  <div class="sheet-body" id="sheetBody"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ───
+let currentProfile = null;
+let currentRecipeId = null;
+const PROFILE_COLORS = ['#d4915e','#7eb89a','#8b9fd4','#d48b8b','#c4a0d4','#d4c77e','#7ec4c4','#d47eb8'];
+const DEFAULT_PROFILES = [
+  { id: 'aaron', name: 'Aaron', emoji: '👨‍🍳', color: '#d4915e' },
+  { id: 'hannah', name: 'Hannah', emoji: '👩‍🍳', color: '#7eb89a' }
+];
+
+// ─── Storage Helpers ───
+function getProfiles() {
+  let p = JSON.parse(localStorage.getItem('rr_profiles') || 'null');
+  if (!p) { p = DEFAULT_PROFILES; localStorage.setItem('rr_profiles', JSON.stringify(p)); }
+  return p;
+}
+function saveProfiles(p) { localStorage.setItem('rr_profiles', JSON.stringify(p)); }
+function getRecipes() {
+  if (!currentProfile) return [];
+  return JSON.parse(localStorage.getItem('rr_recipes_' + currentProfile.id) || '[]');
+}
+function saveRecipes(recipes) {
+  if (!currentProfile) return;
+  localStorage.setItem('rr_recipes_' + currentProfile.id, JSON.stringify(recipes));
+}
+function getApiKey() { return localStorage.getItem('rr_api_key') || ''; }
+function setApiKey(k) { localStorage.setItem('rr_api_key', k); }
+
+// ─── Profile Picker ───
+function renderProfilePicker() {
+  const grid = document.getElementById('profilesGrid');
+  const profiles = getProfiles();
+  grid.innerHTML = profiles.map(p => `
+    <div class="profile-card" onclick="selectProfile('${p.id}')" style="--accent: ${p.color}">
+      <div class="profile-avatar" style="background: ${p.color}20; border-color: ${p.color}">${p.emoji}</div>
+      <div class="profile-name">${p.name}</div>
+    </div>
+  `).join('') + `
+    <div class="profile-card add-profile-card" onclick="openAddProfile()">
+      <div class="profile-avatar">+</div>
+      <div class="profile-name">Add New</div>
+    </div>
+  `;
+}
+
+function selectProfile(id) {
+  const profiles = getProfiles();
+  currentProfile = profiles.find(p => p.id === id);
+  if (!currentProfile) return;
+  applyAccent(currentProfile.color);
+  document.getElementById('profilePicker').classList.add('hidden');
+  document.getElementById('app').classList.add('active');
+  document.getElementById('headerAvatar').textContent = currentProfile.emoji;
+  document.getElementById('headerAvatar').style.background = currentProfile.color + '20';
+  document.getElementById('headerName').textContent = currentProfile.name;
+  document.getElementById('apiKeyInput').value = getApiKey();
+  renderRecipes();
+  renderProfileManageList();
+}
+
+function switchProfile() {
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('profilePicker').classList.remove('hidden');
+  currentProfile = null;
+  renderProfilePicker();
+}
+
+function applyAccent(color) {
+  document.documentElement.style.setProperty('--accent', color);
+  document.documentElement.style.setProperty('--accent-glow', color + '22');
+  document.querySelector('meta[name="theme-color"]').content = '#1a1410';
+}
+
+// ─── Add Profile Modal ───
+function openAddProfile() {
+  document.getElementById('addProfileModal').classList.remove('hidden');
+  document.getElementById('newProfileName').value = '';
+  document.getElementById('newProfileEmoji').value = '👤';
+  renderColorOptions();
+}
+function closeAddProfile() { document.getElementById('addProfileModal').classList.add('hidden'); }
+
+let selectedColor = PROFILE_COLORS[0];
+function renderColorOptions() {
+  document.getElementById('colorOptions').innerHTML = PROFILE_COLORS.map(c =>
+    `<div class="color-dot ${c === selectedColor ? 'selected' : ''}" style="background:${c}" onclick="pickColor('${c}')"></div>`
+  ).join('');
+}
+function pickColor(c) { selectedColor = c; renderColorOptions(); }
+
+function saveNewProfile() {
+  const name = document.getElementById('newProfileName').value.trim();
+  const emoji = document.getElementById('newProfileEmoji').value.trim() || '👤';
+  if (!name) return;
+  const profiles = getProfiles();
+  const id = name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
+  profiles.push({ id, name, emoji, color: selectedColor });
+  saveProfiles(profiles);
+  closeAddProfile();
+  renderProfilePicker();
+}
+
+// ─── Profile Management ───
+function renderProfileManageList() {
+  const profiles = getProfiles();
+  document.getElementById('profileManageList').innerHTML = profiles.map(p => `
+    <div class="profile-manage-item">
+      <div class="profile-avatar" style="background:${p.color}20; border: 2px solid ${p.color}; border-radius: 50%; display:flex; align-items:center; justify-content:center;">${p.emoji}</div>
+      <span>${p.name}</span>
+      <button class="delete-profile-btn" onclick="deleteProfile('${p.id}')">Remove</button>
+    </div>
+  `).join('');
+}
+
+function deleteProfile(id) {
+  if (id === currentProfile?.id) { showToast('Cannot delete active profile'); return; }
+  let profiles = getProfiles();
+  if (profiles.length <= 1) { showToast('Need at least one profile'); return; }
+  profiles = profiles.filter(p => p.id !== id);
+  saveProfiles(profiles);
+  localStorage.removeItem('rr_recipes_' + id);
+  renderProfileManageList();
+  showToast('Profile removed');
+}
+
+// ─── Tabs ───
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+}
+
+// ─── Recipes ───
+function renderRecipes(filter = '') {
+  let recipes = getRecipes();
+  if (filter) {
+    const q = filter.toLowerCase();
+    recipes = recipes.filter(r =>
+      r.title.toLowerCase().includes(q) ||
+      r.description.toLowerCase().includes(q) ||
+      (r.tags || []).some(t => t.toLowerCase().includes(q))
+    );
+  }
+  const container = document.getElementById('recipesContent');
+  if (recipes.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📖</div>
+        <h3>${filter ? 'No matches found' : 'Your cookbook is empty'}</h3>
+        <p>${filter ? 'Try a different search term' : 'Generate your first recipe to get started!'}</p>
+        ${!filter ? '<button class="btn btn-primary" onclick="switchTab(\'tabGenerate\')">Generate Recipe</button>' : ''}
+      </div>
+    `;
+    return;
+  }
+  container.innerHTML = `
+    <h2 class="section-title">${currentProfile.name}'s Recipes</h2>
+    <div class="recipe-grid">
+      ${recipes.map(r => `
+        <div class="recipe-card" onclick="openRecipe('${r.id}')">
+          <div class="recipe-emoji">${r.emoji || '🍽️'}</div>
+          <div class="recipe-title">${esc(r.title)}</div>
+          <div class="recipe-desc">${esc(r.description)}</div>
+          <div class="recipe-tags">${(r.tags || []).map(t => `<span class="recipe-tag">${esc(t)}</span>`).join('')}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function handleSearch() {
+  renderRecipes(document.getElementById('searchInput').value);
+}
+
+// ─── Recipe Detail ───
+function openRecipe(id) {
+  const recipes = getRecipes();
+  const r = recipes.find(x => x.id === id);
+  if (!r) return;
+  currentRecipeId = id;
+  document.getElementById('sheetBody').innerHTML = `
+    <div class="sheet-emoji">${r.emoji || '🍽️'}</div>
+    <h1 class="sheet-title">${esc(r.title)}</h1>
+    <p class="sheet-desc">${esc(r.description)}</p>
+    <div class="sheet-tags">${(r.tags || []).map(t => `<span class="sheet-tag">${esc(t)}</span>`).join('')}</div>
+    ${r.ingredients?.length ? `
+      <div class="sheet-section">
+        <h3 class="sheet-section-title">Ingredients</h3>
+        <ul>${r.ingredients.map(i => `<li>${esc(i)}</li>`).join('')}</ul>
+      </div>
+    ` : ''}
+    ${r.steps?.length ? `
+      <div class="sheet-section">
+        <h3 class="sheet-section-title">Instructions</h3>
+        <ol>${r.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+      </div>
+    ` : ''}
+    ${r.notes ? `
+      <div class="sheet-section">
+        <h3 class="sheet-section-title">Notes</h3>
+        <div class="sheet-notes">${esc(r.notes)}</div>
+      </div>
+    ` : ''}
+  `;
+  document.getElementById('recipeSheet').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSheet() {
+  document.getElementById('recipeSheet').classList.remove('open');
+  document.body.style.overflow = '';
+  currentRecipeId = null;
+}
+
+function deleteRecipe() {
+  if (!currentRecipeId) return;
+  let recipes = getRecipes();
+  recipes = recipes.filter(r => r.id !== currentRecipeId);
+  saveRecipes(recipes);
+  closeSheet();
+  renderRecipes(document.getElementById('searchInput').value);
+  showToast('Recipe deleted');
+}
+
+async function shareRecipe() {
+  const recipes = getRecipes();
+  const r = recipes.find(x => x.id === currentRecipeId);
+  if (!r) return;
+  const text = `${r.emoji} ${r.title}\n\n${r.description}\n\nIngredients:\n${(r.ingredients||[]).map(i => '• ' + i).join('\n')}\n\nSteps:\n${(r.steps||[]).map((s,i) => (i+1) + '. ' + s).join('\n')}${r.notes ? '\n\nNotes: ' + r.notes : ''}`;
+  if (navigator.share) {
+    try { await navigator.share({ title: r.title, text }); } catch {}
+  } else {
+    await navigator.clipboard.writeText(text);
+    showToast('Copied to clipboard');
+  }
+}
+
+// ─── Generate ───
+async function generateRecipe() {
+  const apiKey = getApiKey();
+  if (!apiKey) { showError('genError', 'Please set your Anthropic API key in Settings first.'); switchTab('tabSettings'); return; }
+  const prompt = document.getElementById('genPrompt').value.trim();
+  if (!prompt) { showError('genError', 'Please describe what you want to make.'); return; }
+  const prefs = document.getElementById('genPrefs').value.trim();
+
+  const btn = document.getElementById('generateBtn');
+  const indicator = document.getElementById('genIndicator');
+  btn.disabled = true;
+  indicator.classList.add('active');
+  hideError('genError');
+
+  const systemPrompt = `You are a professional chef and recipe creator. Generate a recipe based on the user's request. Respond ONLY with a valid JSON object (no markdown, no code fences) in this exact format:
+{
+  "emoji": "single relevant food emoji",
+  "title": "Recipe Title",
+  "description": "One or two sentence description",
+  "tags": ["tag1", "tag2", "tag3"],
+  "ingredients": ["ingredient 1 with amount", "ingredient 2 with amount"],
+  "steps": ["Step 1 instruction", "Step 2 instruction"],
+  "notes": "Optional tips or variations"
+}`;
+
+  const userMsg = `Create a recipe for: ${prompt}${prefs ? `\n\nPreferences/constraints: ${prefs}` : ''}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.content[0].text;
+    const recipe = JSON.parse(text);
+    recipe.id = 'r_' + Date.now();
+
+    const recipes = getRecipes();
+    recipes.unshift(recipe);
+    saveRecipes(recipes);
+
+    document.getElementById('genPrompt').value = '';
+    document.getElementById('genPrefs').value = '';
+    renderRecipes();
+    switchTab('tabRecipes');
+    showToast('Recipe created!');
+    setTimeout(() => openRecipe(recipe.id), 300);
+  } catch (e) {
+    showError('genError', e.message);
+  } finally {
+    btn.disabled = false;
+    indicator.classList.remove('active');
+  }
+}
+
+// ─── Settings ───
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  setApiKey(key);
+  showToast(key ? 'API key saved' : 'API key cleared');
+}
+
+// ─── Utilities ───
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+function showError(id, msg) { const e = document.getElementById(id); e.textContent = msg; e.classList.add('show'); }
+function hideError(id) { document.getElementById(id).classList.remove('show'); }
+
+// ─── Init ───
+renderProfilePicker();
+
+// Handle back button for sheet
+window.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+</script>
+</body>
+</html>
