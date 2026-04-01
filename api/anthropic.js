@@ -11,7 +11,24 @@ export default async function handler(req, res) {
   console.log('[anthropic proxy] key length:', apiKey ? apiKey.length : 0);
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'API key not configured — neither ANTHROPIC_API_KEY nor VITE_ANTHROPIC_API_KEY found' });
+    return res.status(500).json({
+      error: 'API key not configured',
+      debug: {
+        ANTHROPIC_API_KEY_set: !!process.env.ANTHROPIC_API_KEY,
+        VITE_ANTHROPIC_API_KEY_set: !!process.env.VITE_ANTHROPIC_API_KEY
+      }
+    });
+  }
+
+  // Temporarily return key diagnostics to debug the 401
+  if (req.body?.debug) {
+    return res.status(200).json({
+      keyPresent: true,
+      keyPrefix: apiKey.substring(0, 15),
+      keyLength: apiKey.length,
+      keySuffix: apiKey.substring(apiKey.length - 6),
+      source: process.env.ANTHROPIC_API_KEY ? 'ANTHROPIC_API_KEY' : 'VITE_ANTHROPIC_API_KEY'
+    });
   }
 
   try {
