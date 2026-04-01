@@ -603,14 +603,6 @@ body > * { position: relative; z-index: 1; }
   <div class="tab-content" id="tabSettings">
     <h2 class="section-title">Settings</h2>
     <div class="settings-section">
-      <div class="settings-title">Anthropic API Key</div>
-      <div class="settings-input-group">
-        <input class="form-input" type="password" id="apiKeyInput" placeholder="sk-ant-...">
-        <button class="btn btn-primary" onclick="saveApiKey()">Save</button>
-      </div>
-      <div class="settings-note">Your API key is stored locally on this device and never sent anywhere except the Anthropic API.</div>
-    </div>
-    <div class="settings-section">
       <div class="settings-title">Profiles</div>
       <div class="profile-manage-list" id="profileManageList"></div>
     </div>
@@ -706,9 +698,7 @@ RULES FOR MODIFYING AN EXISTING RECIPE:
 
 5. RETURN THE COMPLETE RECIPE EVERY TIME. Always return the full JSON with all fields populated. Never omit ingredients or steps that weren't discussed. The JSON you return fully replaces the stored recipe, so anything missing will be lost.`;
 
-// ─── Local Storage (profile_id + API key only) ───
-function getApiKey() { return localStorage.getItem('rr_api_key') || ''; }
-function setApiKey(k) { localStorage.setItem('rr_api_key', k); }
+// ─── Local Storage (profile_id only) ───
 function getSavedProfileId() { return localStorage.getItem('rr_profile_id') || ''; }
 function setSavedProfileId(id) { localStorage.setItem('rr_profile_id', id); }
 
@@ -813,7 +803,6 @@ async function selectProfile(id) {
   document.getElementById('headerAvatar').textContent = currentProfile.emoji;
   document.getElementById('headerAvatar').style.background = currentProfile.color + '20';
   document.getElementById('headerName').textContent = currentProfile.name;
-  document.getElementById('apiKeyInput').value = getApiKey();
   await fetchRecipes();
   renderRecipesFromCache();
   renderProfileManageList();
@@ -1111,9 +1100,6 @@ async function sendChatMessage() {
   const msg = input.value.trim();
   if (!msg) return;
 
-  const apiKey = getApiKey();
-  if (!apiKey) { showToast('Set your API key in Settings first'); return; }
-
   input.value = '';
   chatInFlight = true;
   document.getElementById('chatSendBtn').disabled = true;
@@ -1127,14 +1113,9 @@ async function sendChatMessage() {
   recipe._chatDirty = true;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/anthropic', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1024,
@@ -1196,8 +1177,6 @@ async function sendChatMessage() {
 
 // ─── Generate ───
 async function generateRecipe() {
-  const apiKey = getApiKey();
-  if (!apiKey) { showError('genError', 'Please set your Anthropic API key in Settings first.'); switchTab('tabSettings'); return; }
   const prompt = document.getElementById('genPrompt').value.trim();
   if (!prompt) { showError('genError', 'Please describe what you want to make.'); return; }
   const prefs = document.getElementById('genPrefs').value.trim();
@@ -1211,14 +1190,9 @@ async function generateRecipe() {
   const userMsg = `Create a recipe for: ${prompt}${prefs ? `\n\nPreferences/constraints: ${prefs}` : ''}`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/anthropic', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1024,
@@ -1251,13 +1225,6 @@ async function generateRecipe() {
     btn.disabled = false;
     indicator.classList.remove('active');
   }
-}
-
-// ─── Settings ───
-function saveApiKey() {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  setApiKey(key);
-  showToast(key ? 'API key saved' : 'API key cleared');
 }
 
 // ─── Utilities ───
