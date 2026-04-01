@@ -525,6 +525,36 @@ body > * { position: relative; z-index: 1; }
 }
 #photoInput { display: none; }
 
+/* ─── Photo Action Sheet ─── */
+.photo-action-sheet {
+  position: fixed; bottom: 170px; right: 20px; z-index: 91;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 8px;
+  box-shadow: var(--shadow-lg); min-width: 200px;
+  animation: sheetSlideUp 0.2s ease;
+  display: none;
+}
+.photo-action-sheet.open { display: block; }
+@keyframes sheetSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.photo-action-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border: none; background: none;
+  color: var(--text-primary); font-size: 0.9rem;
+  font-family: 'DM Sans', sans-serif; font-weight: 400;
+  cursor: pointer; border-radius: var(--radius-sm);
+  width: 100%; text-align: left; transition: var(--transition);
+}
+.photo-action-item:hover { background: rgba(201, 168, 76, 0.1); }
+.photo-action-item span.action-emoji { font-size: 1.2rem; flex-shrink: 0; }
+.photo-action-backdrop {
+  position: fixed; inset: 0; z-index: 89;
+  display: none;
+}
+.photo-action-backdrop.open { display: block; }
+
 /* ─── Toast ─── */
 .toast {
   position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -595,8 +625,17 @@ body > * { position: relative; z-index: 1; }
 
   <div class="tab-content active" id="tabRecipes">
     <div id="recipesContent"></div>
-    <button class="photo-fab" id="photoFab" onclick="document.getElementById('photoInput').click()" title="Import from photo">📷</button>
-    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="importFromPhoto(this)">
+    <button class="photo-fab" id="photoFab" onclick="togglePhotoSheet()" title="Import from photo">📷</button>
+    <div class="photo-action-backdrop" id="photoBackdrop" onclick="closePhotoSheet()"></div>
+    <div class="photo-action-sheet" id="photoSheet">
+      <button class="photo-action-item" onclick="pickPhoto('camera')">
+        <span class="action-emoji">📷</span> Take Photo
+      </button>
+      <button class="photo-action-item" onclick="pickPhoto('library')">
+        <span class="action-emoji">🖼️</span> Choose from Library
+      </button>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" onchange="importFromPhoto(this)">
   </div>
 
   <div class="tab-content" id="tabGenerate">
@@ -1250,6 +1289,30 @@ async function generateRecipe() {
 }
 
 // ─── Photo Import ───
+function togglePhotoSheet() {
+  const sheet = document.getElementById('photoSheet');
+  const backdrop = document.getElementById('photoBackdrop');
+  const isOpen = sheet.classList.contains('open');
+  sheet.classList.toggle('open', !isOpen);
+  backdrop.classList.toggle('open', !isOpen);
+}
+
+function closePhotoSheet() {
+  document.getElementById('photoSheet').classList.remove('open');
+  document.getElementById('photoBackdrop').classList.remove('open');
+}
+
+function pickPhoto(mode) {
+  closePhotoSheet();
+  const input = document.getElementById('photoInput');
+  if (mode === 'camera') {
+    input.setAttribute('capture', 'environment');
+  } else {
+    input.removeAttribute('capture');
+  }
+  input.click();
+}
+
 async function importFromPhoto(input) {
   const file = input.files?.[0];
   if (!file) return;
