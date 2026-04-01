@@ -1349,7 +1349,7 @@ async function importFromPhoto(input) {
             },
             {
               type: 'text',
-              text: 'Extract the recipe from this photo. Read all visible text — title, ingredients, steps, and any notes. Return the complete recipe as JSON.'
+              text: 'Extract the recipe from this photo. Read all visible text — title, ingredients, steps, and any notes. Return ONLY a raw JSON object. No markdown, no backticks, no code fences, no preamble, no explanation — just the JSON object and nothing else.'
             }
           ]
         }]
@@ -1362,11 +1362,29 @@ async function importFromPhoto(input) {
     }
 
     const data = await res.json();
-    const text = data.content[0].text;
-    const recipe = JSON.parse(text);
+    let text = data.content[0].text;
+
+    // Strip markdown code fences, backticks, and surrounding text
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+    // If there's preamble text before the JSON, find the first {
+    const jsonStart = text.indexOf('{');
+    const jsonEnd = text.lastIndexOf('}');
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      text = text.substring(jsonStart, jsonEnd + 1);
+    }
+
+    let recipe;
+    try {
+      recipe = JSON.parse(text);
+    } catch (parseErr) {
+      console.error('[photo import] JSON parse failed. Raw response:', data.content[0].text);
+      console.error('[photo import] Cleaned text:', text);
+      throw new Error('Could not parse recipe from photo — try a clearer image');
+    }
+
     recipe.conversation_history = [
       { role: 'user', content: '[Imported from photo]' },
-      { role: 'assistant', content: text }
+      { role: 'assistant', content: JSON.stringify(recipe) }
     ];
 
     openRecipeWithChat(recipe, false);
