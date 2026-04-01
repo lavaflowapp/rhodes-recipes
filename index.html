@@ -505,6 +505,26 @@ body > * { position: relative; z-index: 1; }
 }
 .delete-profile-btn:hover { border-color: #e05555; color: #e05555; }
 
+/* ─── Photo Import FAB ─── */
+.photo-fab {
+  position: fixed; bottom: 100px; right: 20px; z-index: 90;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--gold-gradient); border: none;
+  color: #1a0f3d; font-size: 1.5rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: var(--transition);
+  box-shadow: 0 4px 20px rgba(201, 168, 76, 0.35);
+}
+.photo-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(201, 168, 76, 0.5); }
+.photo-fab:active { transform: scale(0.95); }
+.photo-fab.loading { opacity: 0.6; pointer-events: none; }
+.photo-fab .fab-spinner {
+  width: 24px; height: 24px; border: 3px solid rgba(26, 15, 61, 0.3);
+  border-top-color: #1a0f3d; border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+#photoInput { display: none; }
+
 /* ─── Toast ─── */
 .toast {
   position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -575,6 +595,8 @@ body > * { position: relative; z-index: 1; }
 
   <div class="tab-content active" id="tabRecipes">
     <div id="recipesContent"></div>
+    <button class="photo-fab" id="photoFab" onclick="document.getElementById('photoInput').click()" title="Import from photo">📷</button>
+    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="importFromPhoto(this)">
   </div>
 
   <div class="tab-content" id="tabGenerate">
@@ -1224,6 +1246,72 @@ async function generateRecipe() {
   } finally {
     btn.disabled = false;
     indicator.classList.remove('active');
+  }
+}
+
+// ─── Photo Import ───
+async function importFromPhoto(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  input.value = ''; // reset so same file can be re-selected
+
+  const fab = document.getElementById('photoFab');
+  fab.classList.add('loading');
+  fab.innerHTML = '<div class="fab-spinner"></div>';
+
+  try {
+    // Read file as base64
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const mediaType = file.type || 'image/jpeg';
+
+    const res = await fetch('/api/anthropic', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system: RECIPE_SYSTEM_PROMPT,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mediaType, data: base64 }
+            },
+            {
+              type: 'text',
+              text: 'Extract the recipe from this photo. Read all visible text — title, ingredients, steps, and any notes. Return the complete recipe as JSON.'
+            }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.content[0].text;
+    const recipe = JSON.parse(text);
+    recipe.conversation_history = [
+      { role: 'user', content: '[Imported from photo]' },
+      { role: 'assistant', content: text }
+    ];
+
+    openRecipeWithChat(recipe, false);
+  } catch (e) {
+    showToast('Import failed: ' + e.message);
+  } finally {
+    fab.classList.remove('loading');
+    fab.innerHTML = '📷';
   }
 }
 
